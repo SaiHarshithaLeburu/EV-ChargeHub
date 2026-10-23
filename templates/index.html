@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EV ChargeHub | Charging Management</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<header class="topbar">
+    <a class="brand" href="/">⚡ EV ChargeHub</a>
+
+    <nav>
+        <a href="#stations">Stations</a>
+        <a href="#booking">Book a Slot</a>
+        <a href="#admin">Add Station</a>
+        <a href="#bookings">Bookings</a>
+        <a href="#dbms">DBMS Concepts</a>
+    </nav>
+</header>
+
+<main>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div>
+            <p class="eyebrow">SMARTER. CLEANER. ELECTRIC.</p>
+            <h1>Power your journey.</h1>
+
+            <p>
+                Find a charging station and reserve your next
+                electric vehicle charging slot.
+            </p>
+
+            <a class="primary-btn" href="#booking">
+                Book a charging slot →
+            </a>
+        </div>
+
+        <div class="hero-icon">⚡</div>
+    </section>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="notice {{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Charging Stations -->
+    <section id="stations">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">EXPLORE</p>
+                <h2>Charging Stations</h2>
+            </div>
+
+            <span class="muted">
+                {{ stations|length }} stations listed
+            </span>
+        </div>
+
+        <div class="station-grid">
+
+            {% for station in stations %}
+                <article class="station-card">
+
+                    <div class="station-symbol">⚡</div>
+
+                    <span class="status-pill">Charging Hub</span>
+
+                    <h3>{{ station.station_name }}</h3>
+
+                    <p class="muted">
+                        📍 {{ station.location }}
+                    </p>
+
+                    <div class="station-details">
+                        <div>
+                            <span class="muted">Price / kWh</span>
+                            <strong>
+                                ₹{{ "%.2f"|format(station.price_per_kwh) }}
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span class="muted">Chargers</span>
+                            <strong>{{ station.total_chargers }}</strong>
+                        </div>
+                    </div>
+
+                    <a class="text-link" href="#booking">
+                        Reserve a slot →
+                    </a>
+
+                </article>
+            {% else %}
+                <p>
+                    No charging stations found. Add one below.
+                </p>
+            {% endfor %}
+
+        </div>
+    </section>
+
+    <!-- Booking and Station Management -->
+    <section class="two-column">
+
+        <!-- Booking Form -->
+        <div id="booking" class="panel">
+            <p class="eyebrow">RESERVATION</p>
+            <h2>Book a Charging Slot</h2>
+
+            <p class="muted">
+                Enter your details and select a charger.
+            </p>
+
+            <form action="{{ url_for('book') }}" method="POST">
+
+                <label for="name">Full Name</label>
+                <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    required
+                    maxlength="100"
+                    placeholder="Your name"
+                >
+
+                <label for="email">Email Address</label>
+                <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    maxlength="150"
+                    placeholder="you@example.com"
+                >
+
+                <label for="charger_id">
+                    Charging Station and Charger
+                </label>
+
+                <select id="charger_id" name="charger_id" required>
+                    <option value="">Select a charger</option>
+
+                    {% for charger in chargers %}
+                        <option value="{{ charger.charger_id }}">
+                            {{ charger.station_name }}
+                            — {{ charger.charger_type }}
+                            (Charger {{ charger.charger_id }})
+                        </option>
+                    {% endfor %}
+                </select>
+
+                <div class="form-row">
+                    <div>
+                        <label for="booking_date">Date</label>
+                        <input
+                            id="booking_date"
+                            name="booking_date"
+                            type="date"
+                            min="{{ today }}"
+                            required
+                        >
+                    </div>
+
+                    <div>
+                        <label for="booking_time">Time</label>
+                        <input
+                            id="booking_time"
+                            name="booking_time"
+                            type="time"
+                            required
+                        >
+                    </div>
+                </div>
+
+                <button class="primary-btn" type="submit">
+                    Confirm Booking
+                </button>
+
+            </form>
+        </div>
+
+        <!-- Add Station Form -->
+        <div id="admin" class="panel admin-panel">
+            <p class="eyebrow">MANAGEMENT</p>
+            <h2>Add a Charging Station</h2>
+
+            <p class="muted">
+                Create a station record and its first charger.
+            </p>
+
+            <form action="{{ url_for('add_station') }}" method="POST">
+
+                <label for="station_name">Station Name</label>
+                <input
+                    id="station_name"
+                    name="station_name"
+                    type="text"
+                    required
+                    maxlength="120"
+                    placeholder="Station name"
+                >
+
+                <label for="location">Location</label>
+                <input
+                    id="location"
+                    name="location"
+                    type="text"
+                    required
+                    maxlength="200"
+                    placeholder="City / area"
+                >
+
+                <label for="charger_type">Charger Type</label>
+                <select id="charger_type" name="charger_type" required>
+                    <option value="AC">AC Charger</option>
+                    <option value="DC Fast">DC Fast Charger</option>
+                </select>
+
+                <label for="price_per_kwh">
+                    Price per kWh (₹)
+                </label>
+                <input
+                    id="price_per_kwh"
+                    name="price_per_kwh"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    required
+                    placeholder="15.00"
+                >
+
+                <button class="secondary-btn" type="submit">
+                    Add Station
+                </button>
+
+            </form>
+
+            <p class="small-note">
+                Demonstration admin form. Login protection is needed
+                before using this feature publicly.
+            </p>
+        </div>
+
+    </section>
+
+    <!-- Recent Bookings -->
+    <section id="bookings">
+
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">RECORDS</p>
+                <h2>Recent Bookings</h2>
+            </div>
+
+            <span class="muted">Latest 50 records</span>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Customer</th>
+                        <th>Station</th>
+                        <th>Charger</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for booking in bookings %}
+                        <tr>
+                            <td>#{{ booking.booking_id }}</td>
+
+                            <td>
+                                <strong>{{ booking.name }}</strong>
+                                <small>{{ booking.email }}</small>
+                            </td>
+
+                            <td>{{ booking.station_name }}</td>
+                            <td>{{ booking.charger_type }}</td>
+                            <td>{{ booking.booking_date }}</td>
+                            <td>{{ booking.booking_time }}</td>
+
+                            <td>
+                                <span class="status-pill">
+                                    {{ booking.status }}
+                                </span>
+                            </td>
+
+                            <td>
+                                {% if booking.status == 'Booked' %}
+                                    <form
+                                        action="{{ url_for(
+                                            'cancel_booking',
+                                            booking_id=booking.booking_id
+                                        ) }}"
+                                        method="POST"
+                                    >
+                                        <button
+                                            class="cancel-btn"
+                                            type="submit"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <span class="muted">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                    {% else %}
+                        <tr>
+                            <td colspan="8">
+                                No bookings yet. Create your first
+                                booking above.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </section>
+
+    <!-- DBMS Concepts Demonstrated -->
+    <section id="dbms" class="db-note">
+
+        <p class="eyebrow">PROJECT HIGHLIGHTS</p>
+        <h2>DBMS Concepts Demonstrated</h2>
+
+        <p>
+            <strong>1. Relational Tables:</strong>
+            Users, Stations, Chargers, and Bookings.
+        </p>
+
+        <p>
+            <strong>2. Primary Keys:</strong>
+            Uniquely identify each record in a table.
+        </p>
+
+        <p>
+            <strong>3. Foreign Keys:</strong>
+            Establish relationships between database tables.
+        </p>
+
+        <p>
+            <strong>4. SQL JOIN:</strong>
+            Combine customer, station, charger, and booking details.
+        </p>
+
+        <p>
+            <strong>5. INSERT:</strong>
+            Add new users, stations, chargers, and bookings.
+        </p>
+
+        <p>
+            <strong>6. UPDATE:</strong>
+            Update booking status when a booking is cancelled.
+        </p>
+
+        <p>
+            <strong>7. UNIQUE Constraints:</strong>
+            Prevent duplicate bookings for the same charger,
+            date, and time.
+        </p>
+
+        <p>
+            <strong>8. Parameterized Queries:</strong>
+            Pass user-provided values safely into SQL statements.
+        </p>
+
+    </section>
+
+</main>
+
+<footer>
+    EV ChargeHub · DBMS Mini Project
+</footer>
+
+</body>
+</html>
